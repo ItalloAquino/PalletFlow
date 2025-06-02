@@ -303,7 +303,6 @@ export default function PaletizadoFormModal({
               >
                 {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
               </Button>
-            </Button>
             )}
             <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
