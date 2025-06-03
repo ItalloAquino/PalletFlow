@@ -43,6 +43,7 @@ export default function PicoFormModal({
     looseUnits: 0,
     totalUnits: 0,
     category: "",
+    towerLocation: "",
   });
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -58,6 +59,7 @@ export default function PicoFormModal({
         looseUnits: pico.looseUnits,
         totalUnits: pico.totalUnits,
         category: pico.product.category === "alta_rotacao" ? "Alta Rotação" : "Baixa Rotação",
+        towerLocation: pico.towerLocation || "",
       });
       setSelectedProduct(pico.product);
     } else {
@@ -68,6 +70,7 @@ export default function PicoFormModal({
         looseUnits: 0,
         totalUnits: 0,
         category: "",
+        towerLocation: "",
       });
       setSelectedProduct(null);
     }
@@ -82,7 +85,7 @@ export default function PicoFormModal({
   }, [formData.bases, formData.looseUnits, selectedProduct]);
 
   const createMutation = useMutation({
-    mutationFn: async (data: { productCode: string; bases: number; looseUnits: number }) => {
+    mutationFn: async (data: { productCode: string; bases: number; looseUnits: number; towerLocation: string }) => {
       const response = await apiRequest("POST", "/api/picos", data);
       return response.json();
     },
@@ -116,7 +119,7 @@ export default function PicoFormModal({
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { bases: number; looseUnits: number }) => {
+    mutationFn: async (data: { bases: number; looseUnits: number; towerLocation?: string }) => {
       const response = await apiRequest("PUT", `/api/picos/${pico!.id}`, data);
       return response.json();
     },
@@ -237,12 +240,14 @@ export default function PicoFormModal({
       updateMutation.mutate({
         bases: formData.bases,
         looseUnits: formData.looseUnits,
+        towerLocation: formData.towerLocation,
       });
     } else {
       createMutation.mutate({
         productCode: formData.productCode,
         bases: formData.bases,
         looseUnits: formData.looseUnits,
+        towerLocation: formData.towerLocation,
       });
     }
   };
@@ -264,20 +269,21 @@ export default function PicoFormModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="productCode">Código do Produto *</Label>
+            <Label htmlFor="description">Produto *</Label>
             <ProductAutocomplete
-              value={formData.productCode}
+              value={formData.description}
               onChange={handleProductSelect}
-              placeholder="Digite o código do produto"
+              placeholder="Digite a descrição do produto"
               disabled={!!pico} // Disable for editing
+              searchByDescription={true}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="productCode">Código</Label>
             <Input
-              id="description"
-              value={formData.description}
+              id="productCode"
+              value={formData.productCode}
               placeholder="Preenchido automaticamente"
               readOnly
               className="bg-muted"
@@ -334,6 +340,24 @@ export default function PicoFormModal({
               readOnly
               className="bg-muted font-medium"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="towerLocation">Localização Torre *</Label>
+            <Input
+              id="towerLocation"
+              value={formData.towerLocation}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 2);
+                setFormData({ ...formData, towerLocation: value });
+              }}
+              placeholder="01"
+              maxLength={2}
+              className="w-20"
+            />
+            <p className="text-sm text-muted-foreground">
+              {formData.towerLocation && `Torre${formData.towerLocation.padStart(2, '0')}`}
+            </p>
           </div>
 
           <div className="flex gap-3 pt-4">
