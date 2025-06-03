@@ -1,3 +1,5 @@
+
+import { pool } from "./db";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -37,34 +39,42 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  try {
+    // Teste de conexão com o banco
+    await pool.query("SELECT NOW()");
+    log("✅ Database connected");
+  } catch (err) {
+    log("❌ FATAL: Database connection failed");
+    console.error(err);
+    process.exit(1);
+  }
+
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // Novo handler de erros
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    if (err instanceof Error && err.message.includes("ECONNREFUSED")) {
+      log("🆘 Critical database connection error");
+      return process.exit(1);
+    }
+    
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
     res.status(status).json({ message });
-    throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = process.env.PORT || 5000;
   server.listen({
     port,
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`🚀 Server running on port ${port}`);
   });
 })();
