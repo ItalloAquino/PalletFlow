@@ -27,17 +27,20 @@ export default function ProductAutocomplete({
   const [displayValue, setDisplayValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { data: products } = useQuery<Product[]>({
-    queryKey: ["/api/products/search", { q: searchTerm }],
-    enabled: searchTerm.length > 0,
+  const { data: allProducts } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
   });
 
-  // Filter products by description when in description search mode
-  const filteredProducts = searchByDescription 
-    ? products?.filter(product => 
-        product.description.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : products;
+  // Filter products based on search mode and term
+  const filteredProducts = allProducts?.filter(product => {
+    if (!searchTerm || searchTerm.length < 2) return false;
+    
+    if (searchByDescription) {
+      return product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    } else {
+      return product.code.toLowerCase().includes(searchTerm.toLowerCase());
+    }
+  });
 
   useEffect(() => {
     if (searchByDescription) {
@@ -72,8 +75,11 @@ export default function ProductAutocomplete({
       onChange(inputValue);
     }
     
-    if (inputValue) {
+    // Only open dropdown if search term is 2+ characters
+    if (inputValue && inputValue.length >= 2) {
       setOpen(true);
+    } else {
+      setOpen(false);
     }
   };
 
@@ -95,7 +101,11 @@ export default function ProductAutocomplete({
       <PopoverContent className="w-full p-0" align="start">
         <Command>
           <CommandList>
-            <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+            <CommandEmpty>
+              {searchTerm.length < 2 
+                ? "Digite pelo menos 2 caracteres para pesquisar"
+                : "Nenhum produto encontrado"}
+            </CommandEmpty>
             {filteredProducts && filteredProducts.length > 0 && (
               <CommandGroup>
                 {filteredProducts.map((product) => (
