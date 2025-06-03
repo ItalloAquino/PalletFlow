@@ -235,20 +235,21 @@ export default function PaletizadoFormModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="productCode">Código do Produto *</Label>
+            <Label htmlFor="description">Produto *</Label>
             <ProductAutocomplete
-              value={formData.productCode}
+              value={formData.description}
               onChange={handleProductSelect}
-              placeholder="Digite o código do produto"
+              placeholder="Digite a descrição do produto"
               disabled={!!stock} // Disable for editing
+              searchByDescription={true}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="productCode">Código</Label>
             <Input
-              id="description"
-              value={formData.description}
+              id="productCode"
+              value={formData.productCode}
               placeholder="Preenchido automaticamente"
               readOnly
               className="bg-muted"

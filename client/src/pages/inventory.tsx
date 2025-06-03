@@ -197,6 +197,7 @@ export default function InventoryPage() {
                       <th>Código</th>
                       <th>Descrição</th>
                       <th>Categoria</th>
+                      <th>Torre</th>
                       <th>Bases</th>
                       <th>Unid. Soltas</th>
                       <th>Total</th>
@@ -206,7 +207,7 @@ export default function InventoryPage() {
                   <tbody>
                     {picosLoading ? (
                       <tr>
-                        <td colSpan={7} className="text-center py-8">
+                        <td colSpan={8} className="text-center py-8">
                           Carregando...
                         </td>
                       </tr>
@@ -227,6 +228,9 @@ export default function InventoryPage() {
                                 ? "Alta Rotação"
                                 : "Baixa Rotação"}
                             </Badge>
+                          </td>
+                          <td className="font-medium">
+                            {pico.towerLocation ? `Torre${pico.towerLocation.padStart(2, '0')}` : '-'}
                           </td>
                           <td>{pico.bases}</td>
                           <td>{pico.looseUnits}</td>
@@ -252,7 +256,7 @@ export default function InventoryPage() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <td colSpan={8} className="text-center py-8 text-muted-foreground">
                           {searchTerm
                             ? "Nenhum pico encontrado"
                             : "Nenhum pico em estoque"}
