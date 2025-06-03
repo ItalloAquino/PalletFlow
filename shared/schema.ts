@@ -49,6 +49,7 @@ export const picos = pgTable("picos", {
   bases: integer("bases").notNull().default(0),
   looseUnits: integer("loose_units").notNull().default(0),
   totalUnits: integer("total_units").notNull(),
+  towerLocation: varchar("tower_location", { length: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -115,6 +116,8 @@ export const insertPicoSchema = createInsertSchema(picos).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  towerLocation: z.string().regex(/^\d{2}$/, "Torre deve ter exatamente 2 dígitos (ex: 01, 12)"),
 });
 
 export const insertPaletizadoStockSchema = createInsertSchema(paletizadoStock).omit({

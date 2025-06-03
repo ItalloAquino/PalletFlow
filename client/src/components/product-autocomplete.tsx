@@ -12,6 +12,7 @@ interface ProductAutocompleteProps {
   onChange: (value: string, product?: Product) => void;
   placeholder?: string;
   disabled?: boolean;
+  searchByDescription?: boolean;
 }
 
 export default function ProductAutocomplete({
@@ -19,9 +20,11 @@ export default function ProductAutocomplete({
   onChange,
   placeholder = "Digite o código do produto",
   disabled = false,
+  searchByDescription = false,
 }: ProductAutocompleteProps) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState(value);
+  const [displayValue, setDisplayValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: products } = useQuery<Product[]>({
@@ -29,20 +32,46 @@ export default function ProductAutocomplete({
     enabled: searchTerm.length > 0,
   });
 
-  useEffect(() => {
-    setSearchTerm(value);
-  }, [value]);
+  // Filter products by description when in description search mode
+  const filteredProducts = searchByDescription 
+    ? products?.filter(product => 
+        product.description.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : products;
 
-  const handleSelect = (productCode: string) => {
-    const selectedProduct = products?.find(p => p.code === productCode);
-    setSearchTerm(productCode);
-    onChange(productCode, selectedProduct);
+  useEffect(() => {
+    if (searchByDescription) {
+      setDisplayValue(value);
+    } else {
+      setSearchTerm(value);
+      setDisplayValue(value);
+    }
+  }, [value, searchByDescription]);
+
+  const handleSelect = (product: Product) => {
+    if (searchByDescription) {
+      setDisplayValue(product.description);
+      setSearchTerm(product.description);
+      onChange(product.code, product);
+    } else {
+      setSearchTerm(product.code);
+      setDisplayValue(product.code);
+      onChange(product.code, product);
+    }
     setOpen(false);
   };
 
   const handleInputChange = (inputValue: string) => {
+    setDisplayValue(inputValue);
     setSearchTerm(inputValue);
-    onChange(inputValue);
+    
+    if (searchByDescription) {
+      // In description mode, we pass empty string as code until selection
+      onChange("", undefined);
+    } else {
+      onChange(inputValue);
+    }
+    
     if (inputValue) {
       setOpen(true);
     }
@@ -54,7 +83,7 @@ export default function ProductAutocomplete({
         <div className="relative">
           <Input
             ref={inputRef}
-            value={searchTerm}
+            value={displayValue}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder={placeholder}
             disabled={disabled}
@@ -67,25 +96,38 @@ export default function ProductAutocomplete({
         <Command>
           <CommandList>
             <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
-            {products && products.length > 0 && (
+            {filteredProducts && filteredProducts.length > 0 && (
               <CommandGroup>
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <CommandItem
                     key={product.id}
-                    value={product.code}
-                    onSelect={() => handleSelect(product.code)}
+                    onSelect={() => handleSelect(product)}
                   >
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4",
-                        value === product.code ? "opacity-100" : "opacity-0"
+                        (searchByDescription 
+                          ? displayValue === product.description 
+                          : value === product.code) 
+                          ? "opacity-100" : "opacity-0"
                       )}
                     />
                     <div className="flex flex-col">
-                      <span className="font-medium">{product.code}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {product.description}
-                      </span>
+                      {searchByDescription ? (
+                        <>
+                          <span className="font-medium">{product.description}</span>
+                          <span className="text-sm text-muted-foreground">
+                            Código: {product.code}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-medium">{product.code}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {product.description}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </CommandItem>
                 ))}

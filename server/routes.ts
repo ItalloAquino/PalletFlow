@@ -243,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/picos", requireAuth, async (req, res) => {
     try {
-      const { productCode, bases, looseUnits } = req.body;
+      const { productCode, bases, looseUnits, towerLocation } = req.body;
       
       const product = await storage.getProductByCode(productCode);
       if (!product) {
@@ -257,6 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bases,
         looseUnits,
         totalUnits,
+        towerLocation,
       });
 
       const pico = await storage.createPico(picoData);
@@ -279,7 +280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/picos/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { bases, looseUnits } = req.body;
+      const { bases, looseUnits, towerLocation } = req.body;
       
       const existingPico = await storage.getPico(id);
       if (!existingPico) {
@@ -292,6 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bases,
         looseUnits,
         totalUnits,
+        ...(towerLocation && { towerLocation }),
       };
 
       const pico = await storage.updatePico(id, updates);

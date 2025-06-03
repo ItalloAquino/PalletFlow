@@ -28,6 +28,7 @@ interface PicoFormData {
   looseUnits: number;
   totalUnits: number;
   category: string;
+  towerLocation: string;
 }
 
 export default function PicoFormModal({
