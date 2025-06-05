@@ -58,60 +58,60 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-foreground">Dashboard</h2>
-        <p className="text-muted-foreground">
+    <div className="p-4 sm:p-8">
+      <div className="mb-4 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h2>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Visão geral operacional do armazém
         </p>
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-8">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                   Total Picos
                 </p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-xl sm:text-2xl font-bold text-foreground">
                   {stats?.totalPicos || 0}
                 </p>
               </div>
-              <Layers className="h-8 w-8 text-blue-500" />
+              <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                   Total Paletizados
                 </p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-xl sm:text-2xl font-bold text-foreground">
                   {stats?.totalPaletizados || 0}
                 </p>
               </div>
-              <Package className="h-8 w-8 text-green-500" />
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                   Alta Rotação
                 </p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-xl sm:text-2xl font-bold text-foreground">
                   {stats?.altaRotacao || 0}
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-orange-500" />
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500" />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               {stats?.altaRotacao && stats?.baixaRotacao
@@ -125,17 +125,17 @@ export default function DashboardPage() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                   Baixa Rotação
                 </p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-xl sm:text-2xl font-bold text-foreground">
                   {stats?.baixaRotacao || 0}
                 </p>
               </div>
-              <TrendingDown className="h-8 w-8 text-red-500" />
+              <TrendingDown className="h-6 w-6 sm:h-8 sm:w-8 text-red-500" />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               {stats?.altaRotacao && stats?.baixaRotacao
@@ -150,36 +150,36 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <ArrowUp className="h-5 w-5 text-green-500 mr-2" />
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center text-base sm:text-lg">
+              <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
               Entradas Recentes
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-2 sm:space-y-3">
               {stats?.recentEntries && stats.recentEntries.length > 0 ? (
                 stats.recentEntries.map((entry) => (
                   <div
                     key={entry.id}
-                    className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-lg"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-2 sm:p-3 bg-green-50 dark:bg-green-950 rounded-lg"
                   >
-                    <div>
-                      <p className="font-medium text-foreground">
+                    <div className="mb-2 sm:mb-0">
+                      <p className="font-medium text-sm sm:text-base text-foreground">
                         {entry.productCode}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         {entry.quantity} unidades
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                       <Badge
                         variant={
                           entry.category === "alta_rotacao" ? "default" : "secondary"
                         }
-                        className="mb-1"
+                        className="mb-1 text-xs"
                       >
                         {entry.category === "alta_rotacao" ? "Alta" : "Baixa"}
                       </Badge>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
                   </div>
                 ))
               ) : (
-                <p className="text-center text-muted-foreground py-8">
+                <p className="text-center text-sm text-muted-foreground py-4 sm:py-8">
                   Nenhuma entrada recente
                 </p>
               )}

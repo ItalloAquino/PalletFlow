@@ -146,13 +146,13 @@ export default function InventoryPage() {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-foreground">Controle de Estoque</h2>
-        <p className="text-muted-foreground">Gestão de Picos e Paletizados</p>
+    <div className="p-4 sm:p-8">
+      <div className="mb-4 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Controle de Estoque</h2>
+        <p className="text-sm sm:text-base text-muted-foreground">Gestão de Picos e Paletizados</p>
       </div>
 
-      <Tabs defaultValue="picos" className="space-y-6">
+      <Tabs defaultValue="picos" className="space-y-4 sm:space-y-6">
         <TabsList className="grid w-full grid-cols-2 max-w-md">
           <TabsTrigger value="picos">Picos</TabsTrigger>
           <TabsTrigger value="paletizados">Paletizados</TabsTrigger>
@@ -160,9 +160,9 @@ export default function InventoryPage() {
 
         {/* Picos Tab */}
         <TabsContent value="picos">
-          <div className="mb-6 flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-foreground">Estoque de Picos</h3>
-            <Button onClick={() => setIsPicoModalOpen(true)}>
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h3 className="text-lg sm:text-xl font-semibold text-foreground">Estoque de Picos</h3>
+            <Button onClick={() => setIsPicoModalOpen(true)} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Novo Pico
             </Button>
@@ -172,7 +172,7 @@ export default function InventoryPage() {
             <CardContent className="p-0">
               {/* Search and actions bar */}
               <div className="p-4 border-b border-border">
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -182,7 +182,7 @@ export default function InventoryPage() {
                       className="pl-10"
                     />
                   </div>
-                  <Button onClick={handlePrintPicos} variant="outline">
+                  <Button onClick={handlePrintPicos} variant="outline" className="w-full sm:w-auto">
                     <Printer className="h-4 w-4 mr-2" />
                     Imprimir
                   </Button>
@@ -191,17 +191,17 @@ export default function InventoryPage() {
 
               {/* Picos table */}
               <div className="overflow-x-auto">
-                <table className="data-table">
+                <table className="data-table w-full">
                   <thead>
                     <tr>
-                      <th>Código</th>
-                      <th>Descrição</th>
-                      <th>Categoria</th>
-                      <th>Torre</th>
-                      <th>Bases</th>
-                      <th>Unid. Soltas</th>
-                      <th>Total</th>
-                      <th>Ações</th>
+                      <th className="whitespace-nowrap">Código</th>
+                      <th className="whitespace-nowrap">Descrição</th>
+                      <th className="whitespace-nowrap">Categoria</th>
+                      <th className="whitespace-nowrap">Torre</th>
+                      <th className="whitespace-nowrap">Bases</th>
+                      <th className="whitespace-nowrap">Unid. Soltas</th>
+                      <th className="whitespace-nowrap">Total</th>
+                      <th className="whitespace-nowrap">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -214,9 +214,9 @@ export default function InventoryPage() {
                     ) : filteredPicos && filteredPicos.length > 0 ? (
                       filteredPicos.map((pico) => (
                         <tr key={pico.id}>
-                          <td className="font-medium">{pico.product.code}</td>
-                          <td>{pico.product.description}</td>
-                          <td>
+                          <td className="font-medium whitespace-nowrap">{pico.product.code}</td>
+                          <td className="whitespace-nowrap">{pico.product.description}</td>
+                          <td className="whitespace-nowrap">
                             <Badge
                               className={
                                 pico.product.category === "alta_rotacao"
@@ -229,13 +229,13 @@ export default function InventoryPage() {
                                 : "Baixa Rotação"}
                             </Badge>
                           </td>
-                          <td className="font-medium">
+                          <td className="font-medium whitespace-nowrap">
                             {pico.towerLocation ? `Torre${pico.towerLocation.padStart(2, '0')}` : '-'}
                           </td>
-                          <td>{pico.bases}</td>
-                          <td>{pico.looseUnits}</td>
-                          <td className="font-medium">{pico.totalUnits}</td>
-                          <td>
+                          <td className="whitespace-nowrap">{pico.bases}</td>
+                          <td className="whitespace-nowrap">{pico.looseUnits}</td>
+                          <td className="font-medium whitespace-nowrap">{pico.totalUnits}</td>
+                          <td className="whitespace-nowrap">
                             <div className="flex gap-2">
                               <Button
                                 variant="ghost"
@@ -272,9 +272,9 @@ export default function InventoryPage() {
 
         {/* Paletizados Tab */}
         <TabsContent value="paletizados">
-          <div className="mb-6 flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-foreground">Estoque de Paletizados</h3>
-            <Button onClick={() => setIsPaletizadoModalOpen(true)}>
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h3 className="text-lg sm:text-xl font-semibold text-foreground">Estoque de Paletizados</h3>
+            <Button onClick={() => setIsPaletizadoModalOpen(true)} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Novo Estoque
             </Button>
@@ -284,7 +284,7 @@ export default function InventoryPage() {
             <CardContent className="p-0">
               {/* Search and actions bar */}
               <div className="p-4 border-b border-border">
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -294,7 +294,7 @@ export default function InventoryPage() {
                       className="pl-10"
                     />
                   </div>
-                  <Button onClick={handlePrintPaletizados} variant="outline">
+                  <Button onClick={handlePrintPaletizados} variant="outline" className="w-full sm:w-auto">
                     <Printer className="h-4 w-4 mr-2" />
                     Imprimir
                   </Button>
@@ -303,14 +303,14 @@ export default function InventoryPage() {
 
               {/* Paletizados table */}
               <div className="overflow-x-auto">
-                <table className="data-table">
+                <table className="data-table w-full">
                   <thead>
                     <tr>
-                      <th>Código</th>
-                      <th>Descrição</th>
-                      <th>Categoria</th>
-                      <th>Quantidade</th>
-                      <th>Ações</th>
+                      <th className="whitespace-nowrap">Código</th>
+                      <th className="whitespace-nowrap">Descrição</th>
+                      <th className="whitespace-nowrap">Categoria</th>
+                      <th className="whitespace-nowrap">Quantidade</th>
+                      <th className="whitespace-nowrap">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -323,9 +323,9 @@ export default function InventoryPage() {
                     ) : filteredPaletizadoStock && filteredPaletizadoStock.length > 0 ? (
                       filteredPaletizadoStock.map((stock) => (
                         <tr key={stock.id}>
-                          <td className="font-medium">{stock.product.code}</td>
-                          <td>{stock.product.description}</td>
-                          <td>
+                          <td className="font-medium whitespace-nowrap">{stock.product.code}</td>
+                          <td className="whitespace-nowrap">{stock.product.description}</td>
+                          <td className="whitespace-nowrap">
                             <Badge
                               className={
                                 stock.product.category === "alta_rotacao"
@@ -338,8 +338,8 @@ export default function InventoryPage() {
                                 : "Baixa Rotação"}
                             </Badge>
                           </td>
-                          <td>{stock.quantity}</td>
-                          <td>
+                          <td className="whitespace-nowrap">{stock.quantity}</td>
+                          <td className="whitespace-nowrap">
                             <div className="flex gap-2">
                               <Button
                                 variant="ghost"

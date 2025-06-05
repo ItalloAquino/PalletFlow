@@ -89,13 +89,13 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex justify-between items-center">
+    <div className="p-4 sm:p-8">
+      <div className="mb-4 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Cadastro de Paletizados</h2>
-          <p className="text-muted-foreground">Gerenciar produtos paletizados</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Cadastro de Paletizados</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Gerenciar produtos paletizados</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
+        <Button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Novo Paletizado
         </Button>
@@ -105,7 +105,7 @@ export default function ProductsPage() {
         <CardContent className="p-0">
           {/* Search and filter bar */}
           <div className="p-4 border-b border-border">
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -116,7 +116,7 @@ export default function ProductsPage() {
                 />
               </div>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Filtrar por categoria" />
                 </SelectTrigger>
                 <SelectContent>
@@ -130,26 +130,26 @@ export default function ProductsPage() {
 
           {/* Products table */}
           <div className="overflow-x-auto">
-            <table className="data-table">
+            <table className="data-table w-full">
               <thead>
                 <tr>
-                  <th>Código</th>
-                  <th>Descrição</th>
-                  <th>Qtd. Bases</th>
-                  <th>Unidades/Base</th>
-                  <th>Categoria</th>
-                  <th>Ações</th>
+                  <th className="whitespace-nowrap">Código</th>
+                  <th className="whitespace-nowrap">Descrição</th>
+                  <th className="whitespace-nowrap">Qtd. Bases</th>
+                  <th className="whitespace-nowrap">Unidades/Base</th>
+                  <th className="whitespace-nowrap">Categoria</th>
+                  <th className="whitespace-nowrap">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredProducts && filteredProducts.length > 0 ? (
                   filteredProducts.map((product) => (
                     <tr key={product.id}>
-                      <td className="font-medium">{product.code}</td>
-                      <td>{product.description}</td>
-                      <td>{product.quantityBases}</td>
-                      <td>{product.unitsPerBase}</td>
-                      <td>
+                      <td className="font-medium whitespace-nowrap">{product.code}</td>
+                      <td className="whitespace-nowrap">{product.description}</td>
+                      <td className="whitespace-nowrap">{product.quantityBases}</td>
+                      <td className="whitespace-nowrap">{product.unitsPerBase}</td>
+                      <td className="whitespace-nowrap">
                         <Badge
                           className={
                             product.category === "alta_rotacao"
@@ -162,7 +162,7 @@ export default function ProductsPage() {
                             : "Baixa Rotação"}
                         </Badge>
                       </td>
-                      <td>
+                      <td className="whitespace-nowrap">
                         <div className="flex gap-2">
                           <Button
                             variant="ghost"

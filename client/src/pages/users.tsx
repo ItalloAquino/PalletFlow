@@ -67,13 +67,13 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex justify-between items-center">
+    <div className="p-4 sm:p-8">
+      <div className="mb-4 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Gestão de Usuários</h2>
-          <p className="text-muted-foreground">Administrar usuários do sistema</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Gestão de Usuários</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Administrar usuários do sistema</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
+        <Button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Novo Usuário
         </Button>
@@ -82,24 +82,24 @@ export default function UsersPage() {
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="data-table">
+            <table className="data-table w-full">
               <thead>
                 <tr>
-                  <th>Nome</th>
-                  <th>Apelido</th>
-                  <th>Usuário</th>
-                  <th>Nível</th>
-                  <th>Ações</th>
+                  <th className="whitespace-nowrap">Nome</th>
+                  <th className="whitespace-nowrap">Apelido</th>
+                  <th className="whitespace-nowrap">Usuário</th>
+                  <th className="whitespace-nowrap">Nível</th>
+                  <th className="whitespace-nowrap">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {users && users.length > 0 ? (
                   users.map((user) => (
                     <tr key={user.id}>
-                      <td className="font-medium">{user.name}</td>
-                      <td>{user.nickname}</td>
-                      <td>{user.username}</td>
-                      <td>
+                      <td className="font-medium whitespace-nowrap">{user.name}</td>
+                      <td className="whitespace-nowrap">{user.nickname}</td>
+                      <td className="whitespace-nowrap">{user.username}</td>
+                      <td className="whitespace-nowrap">
                         <Badge
                           className={
                             user.role === "administrador"
@@ -112,7 +112,7 @@ export default function UsersPage() {
                             : "Armazenista"}
                         </Badge>
                       </td>
-                      <td>
+                      <td className="whitespace-nowrap">
                         <div className="flex gap-2">
                           <Button
                             variant="ghost"

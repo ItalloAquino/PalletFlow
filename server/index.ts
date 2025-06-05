@@ -1,3 +1,4 @@
+// TESTE DE EDIÇÃO LOCAL - Se você ver este comentário, as edições estão funcionando!
 import 'dotenv/config';
 import dotenv from 'dotenv';
 dotenv.config();
