@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function Sidebar() {
+export default function Sidebar({ open, setOpen }: { open?: boolean; setOpen?: (open: boolean) => void }) {
   const [location] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -74,6 +74,10 @@ export default function Sidebar() {
     return location === href;
   };
 
+  const handleNavClick = () => {
+    if (setOpen) setOpen(false);
+  };
+
   return (
     <div className="fixed left-0 top-0 h-full w-64 bg-card shadow-lg z-40 border-r">
       <div className="p-6 border-b">
@@ -98,6 +102,7 @@ export default function Sidebar() {
                   "nav-item",
                   isActive(item.href) && "active"
                 )}
+                onClick={handleNavClick}
               >
                 <item.icon className="h-5 w-5 mr-3" />
                 {item.label}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,6 +16,16 @@ import { apiRequest } from "@/lib/queryClient";
 import { Plus, Edit, Trash2, Search } from "lucide-react";
 import ProductFormModal from "@/components/product-form-modal";
 import type { Product } from "@shared/schema";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function ProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -89,114 +99,124 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-8">
-      <div className="mb-4 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Cadastro de Paletizados</h2>
-          <p className="text-sm sm:text-base text-muted-foreground">Gerenciar produtos paletizados</p>
-        </div>
-        <Button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Paletizado
-        </Button>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-4 sm:mb-6 lg:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Produtos</h2>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Gerenciamento de produtos e categorias
+        </p>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          {/* Search and filter bar */}
-          <div className="p-4 border-b border-border">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="space-y-4 sm:space-y-6">
+        <Card>
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <CardTitle>Lista de Produtos</CardTitle>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
-                  placeholder="Buscar por código ou descrição..."
+                  placeholder="Buscar produto..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="w-full sm:w-64"
                 />
+                <Select
+                  value={categoryFilter}
+                  onValueChange={setCategoryFilter}
+                >
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Filtrar por categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as categorias</SelectItem>
+                    <SelectItem value="alta_rotacao">Alta Rotação</SelectItem>
+                    <SelectItem value="baixa_rotacao">Baixa Rotação</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Produto
+                </Button>
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Filtrar por categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as categorias</SelectItem>
-                  <SelectItem value="alta_rotacao">Alta Rotação</SelectItem>
-                  <SelectItem value="baixa_rotacao">Baixa Rotação</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
-          </div>
-
-          {/* Products table */}
-          <div className="overflow-x-auto">
-            <table className="data-table w-full">
-              <thead>
-                <tr>
-                  <th className="whitespace-nowrap">Código</th>
-                  <th className="whitespace-nowrap">Descrição</th>
-                  <th className="whitespace-nowrap">Qtd. Bases</th>
-                  <th className="whitespace-nowrap">Unidades/Base</th>
-                  <th className="whitespace-nowrap">Categoria</th>
-                  <th className="whitespace-nowrap">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts && filteredProducts.length > 0 ? (
-                  filteredProducts.map((product) => (
-                    <tr key={product.id}>
-                      <td className="font-medium whitespace-nowrap">{product.code}</td>
-                      <td className="whitespace-nowrap">{product.description}</td>
-                      <td className="whitespace-nowrap">{product.quantityBases}</td>
-                      <td className="whitespace-nowrap">{product.unitsPerBase}</td>
-                      <td className="whitespace-nowrap">
-                        <Badge
-                          className={
-                            product.category === "alta_rotacao"
-                              ? "badge-alta-rotacao"
-                              : "badge-baixa-rotacao"
-                          }
-                        >
-                          {product.category === "alta_rotacao"
-                            ? "Alta Rotação"
-                            : "Baixa Rotação"}
-                        </Badge>
-                      </td>
-                      <td className="whitespace-nowrap">
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(product)}
+          </CardHeader>
+          <CardContent className="p-0 sm:p-6">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">Código</TableHead>
+                    <TableHead className="whitespace-nowrap">Nome</TableHead>
+                    <TableHead className="whitespace-nowrap">Categoria</TableHead>
+                    <TableHead className="whitespace-nowrap">Descrição</TableHead>
+                    <TableHead className="whitespace-nowrap">Última Atualização</TableHead>
+                    <TableHead className="whitespace-nowrap">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8">
+                        Carregando...
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredProducts.length > 0 ? (
+                    filteredProducts.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell className="whitespace-nowrap">{product.code}</TableCell>
+                        <TableCell className="whitespace-nowrap">{product.name}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge
+                            variant={
+                              product.category === "alta_rotacao" ? "default" : "secondary"
+                            }
                           >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(product)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8 text-muted-foreground">
-                      {searchTerm || categoryFilter !== "all"
-                        ? "Nenhum produto encontrado com os filtros aplicados"
-                        : "Nenhum produto cadastrado"}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                            {product.category === "alta_rotacao" ? "Alta" : "Baixa"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{product.description}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {format(new Date(product.updatedAt), "dd/MM/yyyy HH:mm", {
+                            locale: ptBR,
+                          })}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingProduct(product);
+                                setIsModalOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(product)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        {searchTerm
+                          ? "Nenhum produto encontrado"
+                          : "Nenhum produto cadastrado"}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <ProductFormModal
         isOpen={isModalOpen}

@@ -58,8 +58,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-4 sm:p-8">
-      <div className="mb-4 sm:mb-8">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-4 sm:mb-6 lg:mb-8">
         <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h2>
         <p className="text-sm sm:text-base text-muted-foreground">
           Visão geral operacional do armazém
@@ -67,7 +67,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-6 lg:mb-8">
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
@@ -201,34 +201,34 @@ export default function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <ArrowDown className="h-5 w-5 text-red-500 mr-2" />
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center text-base sm:text-lg">
+              <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-500 mr-2" />
               Saídas Recentes
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-2 sm:space-y-3">
               {stats?.recentExits && stats.recentExits.length > 0 ? (
                 stats.recentExits.map((exit) => (
                   <div
                     key={exit.id}
-                    className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-950 rounded-lg"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-2 sm:p-3 bg-red-50 dark:bg-red-950 rounded-lg"
                   >
-                    <div>
-                      <p className="font-medium text-foreground">
+                    <div className="mb-2 sm:mb-0">
+                      <p className="font-medium text-sm sm:text-base text-foreground">
                         {exit.productCode}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         {exit.quantity} unidades
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                       <Badge
                         variant={
                           exit.category === "alta_rotacao" ? "default" : "secondary"
                         }
-                        className="mb-1"
+                        className="mb-1 text-xs"
                       >
                         {exit.category === "alta_rotacao" ? "Alta" : "Baixa"}
                       </Badge>
@@ -241,7 +241,7 @@ export default function DashboardPage() {
                   </div>
                 ))
               ) : (
-                <p className="text-center text-muted-foreground py-8">
+                <p className="text-center text-sm text-muted-foreground py-4 sm:py-8">
                   Nenhuma saída recente
                 </p>
               )}

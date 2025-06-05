@@ -1,397 +1,404 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Printer, Edit, Trash2 } from "lucide-react";
-import PicoFormModal from "@/components/pico-form-modal";
-import PaletizadoFormModal from "@/components/paletizado-form-modal";
-import type { PicoWithProduct, PaletizadoStockWithProduct } from "@shared/schema";
+import { Plus, Search, Printer, Edit, Trash2, ArrowUpDown } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+interface StockItem {
+  id: string;
+  code: string;
+  name: string;
+  category: "alta_rotacao" | "baixa_rotacao";
+  quantity: number;
+  updatedAt: string;
+}
+
+interface EntryItem {
+  id: string;
+  code: string;
+  name: string;
+  category: "alta_rotacao" | "baixa_rotacao";
+  quantity: number;
+  createdAt: string;
+  user: string;
+}
+
+interface ExitItem {
+  id: string;
+  code: string;
+  name: string;
+  category: "alta_rotacao" | "baixa_rotacao";
+  quantity: number;
+  createdAt: string;
+  user: string;
+}
 
 export default function InventoryPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isPicoModalOpen, setIsPicoModalOpen] = useState(false);
-  const [isPaletizadoModalOpen, setIsPaletizadoModalOpen] = useState(false);
-  const [editingPico, setEditingPico] = useState<PicoWithProduct | null>(null);
-  const [editingPaletizado, setEditingPaletizado] = useState<PaletizadoStockWithProduct | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
-  const { data: picos, isLoading: picosLoading } = useQuery<PicoWithProduct[]>({
-    queryKey: ["/api/picos"],
+  const { data: stock, isLoading: stockLoading } = useQuery<StockItem[]>({
+    queryKey: ["stock"],
+    queryFn: async () => {
+      const response = await fetch("/api/stock");
+      if (!response.ok) throw new Error("Failed to fetch stock");
+      return response.json();
+    },
   });
 
-  const { data: paletizadoStock, isLoading: stockLoading } = useQuery<PaletizadoStockWithProduct[]>({
-    queryKey: ["/api/paletizado-stock"],
+  const { data: entries, isLoading: entriesLoading } = useQuery<EntryItem[]>({
+    queryKey: ["entries"],
+    queryFn: async () => {
+      const response = await fetch("/api/entries");
+      if (!response.ok) throw new Error("Failed to fetch entries");
+      return response.json();
+    },
   });
 
-  // Filter picos based on search term
-  const filteredPicos = picos?.filter((pico) =>
-    pico.product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pico.product.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const { data: exits, isLoading: exitsLoading } = useQuery<ExitItem[]>({
+    queryKey: ["exits"],
+    queryFn: async () => {
+      const response = await fetch("/api/exits");
+      if (!response.ok) throw new Error("Failed to fetch exits");
+      return response.json();
+    },
+  });
 
-  // Filter paletizado stock based on search term
-  const filteredPaletizadoStock = paletizadoStock?.filter((stock) =>
-    stock.product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    stock.product.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStock = useMemo(() => {
+    if (!stock) return [];
+    return stock.filter((item) => {
+      const matchesSearch = item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [stock, searchQuery, categoryFilter]);
 
-  const handlePrintPicos = () => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
+  const filteredEntries = useMemo(() => {
+    if (!entries) return [];
+    return entries.filter((entry) => {
+      const matchesSearch = entry.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        entry.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || entry.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [entries, searchQuery, categoryFilter]);
 
-    const html = `
-      <html>
-        <head>
-          <title>Relatório de Picos</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .print-table { width: 100%; border-collapse: collapse; margin-bottom: 50px; }
-            .print-table th, .print-table td { border: 1px solid #000; padding: 8px; text-align: left; }
-            .print-table th { background-color: #f0f0f0; font-weight: bold; }
-            .extra-lines { height: 200px; border-bottom: 1px solid #ccc; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>PalletFlow - Relatório de Picos</h1>
-            <p>Data: ${new Date().toLocaleDateString("pt-BR")}</p>
-          </div>
-          <table class="print-table">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Descrição</th>
-                <th>Categoria</th>
-                <th>Bases</th>
-                <th>Unid. Soltas</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filteredPicos?.map(pico => `
-                <tr>
-                  <td>${pico.product.code}</td>
-                  <td>${pico.product.description}</td>
-                  <td>${pico.product.category === "alta_rotacao" ? "Alta Rotação" : "Baixa Rotação"}</td>
-                  <td>${pico.bases}</td>
-                  <td>${pico.looseUnits}</td>
-                  <td>${pico.totalUnits}</td>
-                </tr>
-              `).join("") || ""}
-            </tbody>
-          </table>
-          <div class="extra-lines"></div>
-        </body>
-      </html>
-    `;
+  const filteredExits = useMemo(() => {
+    if (!exits) return [];
+    return exits.filter((exit) => {
+      const matchesSearch = exit.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        exit.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || exit.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [exits, searchQuery, categoryFilter]);
 
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.print();
-  };
-
-  const handlePrintPaletizados = () => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    const html = `
-      <html>
-        <head>
-          <title>Relatório de Paletizados</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .print-table { width: 100%; border-collapse: collapse; margin-bottom: 50px; }
-            .print-table th, .print-table td { border: 1px solid #000; padding: 8px; text-align: left; }
-            .print-table th { background-color: #f0f0f0; font-weight: bold; }
-            .extra-lines { height: 200px; border-bottom: 1px solid #ccc; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>PalletFlow - Relatório de Paletizados</h1>
-            <p>Data: ${new Date().toLocaleDateString("pt-BR")}</p>
-          </div>
-          <table class="print-table">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Descrição</th>
-                <th>Categoria</th>
-                <th>Quantidade</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filteredPaletizadoStock?.map(stock => `
-                <tr>
-                  <td>${stock.product.code}</td>
-                  <td>${stock.product.description}</td>
-                  <td>${stock.product.category === "alta_rotacao" ? "Alta Rotação" : "Baixa Rotação"}</td>
-                  <td>${stock.quantity}</td>
-                </tr>
-              `).join("") || ""}
-            </tbody>
-          </table>
-          <div class="extra-lines"></div>
-        </body>
-      </html>
-    `;
-
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.print();
+  const handleStockAction = (item: StockItem) => {
+    // Implementar lógica de ação no estoque
+    console.log("Stock action:", item);
   };
 
   return (
-    <div className="p-4 sm:p-8">
-      <div className="mb-4 sm:mb-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Controle de Estoque</h2>
-        <p className="text-sm sm:text-base text-muted-foreground">Gestão de Picos e Paletizados</p>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-4 sm:mb-6 lg:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Inventário</h2>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Gerenciamento de estoque e movimentações
+        </p>
       </div>
 
-      <Tabs defaultValue="picos" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="picos">Picos</TabsTrigger>
-          <TabsTrigger value="paletizados">Paletizados</TabsTrigger>
-        </TabsList>
+      <div className="space-y-4 sm:space-y-6">
+        <Tabs defaultValue="stock" className="w-full">
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="stock" className="flex-1 sm:flex-none">
+              Estoque
+            </TabsTrigger>
+            <TabsTrigger value="entries" className="flex-1 sm:flex-none">
+              Entradas
+            </TabsTrigger>
+            <TabsTrigger value="exits" className="flex-1 sm:flex-none">
+              Saídas
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Picos Tab */}
-        <TabsContent value="picos">
-          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h3 className="text-lg sm:text-xl font-semibold text-foreground">Estoque de Picos</h3>
-            <Button onClick={() => setIsPicoModalOpen(true)} className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Pico
-            </Button>
-          </div>
-
-          <Card>
-            <CardContent className="p-0">
-              {/* Search and actions bar */}
-              <div className="p-4 border-b border-border">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <TabsContent value="stock" className="mt-4 sm:mt-6">
+            <Card>
+              <CardHeader className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle>Estoque Atual</CardTitle>
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Input
-                      placeholder="Buscar por código..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
+                      placeholder="Buscar produto..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full sm:w-64"
                     />
+                    <Select
+                      value={categoryFilter}
+                      onValueChange={setCategoryFilter}
+                    >
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Filtrar por categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as categorias</SelectItem>
+                        <SelectItem value="alta_rotacao">Alta Rotação</SelectItem>
+                        <SelectItem value="baixa_rotacao">Baixa Rotação</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Button onClick={handlePrintPicos} variant="outline" className="w-full sm:w-auto">
-                    <Printer className="h-4 w-4 mr-2" />
-                    Imprimir
-                  </Button>
                 </div>
-              </div>
-
-              {/* Picos table */}
-              <div className="overflow-x-auto">
-                <table className="data-table w-full">
-                  <thead>
-                    <tr>
-                      <th className="whitespace-nowrap">Código</th>
-                      <th className="whitespace-nowrap">Descrição</th>
-                      <th className="whitespace-nowrap">Categoria</th>
-                      <th className="whitespace-nowrap">Torre</th>
-                      <th className="whitespace-nowrap">Bases</th>
-                      <th className="whitespace-nowrap">Unid. Soltas</th>
-                      <th className="whitespace-nowrap">Total</th>
-                      <th className="whitespace-nowrap">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {picosLoading ? (
-                      <tr>
-                        <td colSpan={8} className="text-center py-8">
-                          Carregando...
-                        </td>
-                      </tr>
-                    ) : filteredPicos && filteredPicos.length > 0 ? (
-                      filteredPicos.map((pico) => (
-                        <tr key={pico.id}>
-                          <td className="font-medium whitespace-nowrap">{pico.product.code}</td>
-                          <td className="whitespace-nowrap">{pico.product.description}</td>
-                          <td className="whitespace-nowrap">
-                            <Badge
-                              className={
-                                pico.product.category === "alta_rotacao"
-                                  ? "badge-alta-rotacao"
-                                  : "badge-baixa-rotacao"
-                              }
-                            >
-                              {pico.product.category === "alta_rotacao"
-                                ? "Alta Rotação"
-                                : "Baixa Rotação"}
-                            </Badge>
-                          </td>
-                          <td className="font-medium whitespace-nowrap">
-                            {pico.towerLocation ? `Torre${pico.towerLocation.padStart(2, '0')}` : '-'}
-                          </td>
-                          <td className="whitespace-nowrap">{pico.bases}</td>
-                          <td className="whitespace-nowrap">{pico.looseUnits}</td>
-                          <td className="font-medium whitespace-nowrap">{pico.totalUnits}</td>
-                          <td className="whitespace-nowrap">
-                            <div className="flex gap-2">
+              </CardHeader>
+              <CardContent className="p-0 sm:p-6">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="whitespace-nowrap">Código</TableHead>
+                        <TableHead className="whitespace-nowrap">Produto</TableHead>
+                        <TableHead className="whitespace-nowrap">Categoria</TableHead>
+                        <TableHead className="whitespace-nowrap">Quantidade</TableHead>
+                        <TableHead className="whitespace-nowrap">Última Atualização</TableHead>
+                        <TableHead className="whitespace-nowrap">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {stockLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8">
+                            Carregando...
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredStock.length > 0 ? (
+                        filteredStock.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="whitespace-nowrap">{item.code}</TableCell>
+                            <TableCell className="whitespace-nowrap">{item.name}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              <Badge
+                                variant={
+                                  item.category === "alta_rotacao" ? "default" : "secondary"
+                                }
+                              >
+                                {item.category === "alta_rotacao" ? "Alta" : "Baixa"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">{item.quantity}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {format(new Date(item.updatedAt), "dd/MM/yyyy HH:mm", {
+                                locale: ptBR,
+                              })}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => {
-                                  setEditingPico(pico);
-                                  setIsPicoModalOpen(true);
-                                }}
+                                onClick={() => handleStockAction(item)}
                               >
-                                <Edit className="h-4 w-4" />
+                                <ArrowUpDown className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="sm">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={8} className="text-center py-8 text-muted-foreground">
-                          {searchTerm
-                            ? "Nenhum pico encontrado"
-                            : "Nenhum pico em estoque"}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Paletizados Tab */}
-        <TabsContent value="paletizados">
-          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h3 className="text-lg sm:text-xl font-semibold text-foreground">Estoque de Paletizados</h3>
-            <Button onClick={() => setIsPaletizadoModalOpen(true)} className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Estoque
-            </Button>
-          </div>
-
-          <Card>
-            <CardContent className="p-0">
-              {/* Search and actions bar */}
-              <div className="p-4 border-b border-border">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar por código..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <Button onClick={handlePrintPaletizados} variant="outline" className="w-full sm:w-auto">
-                    <Printer className="h-4 w-4 mr-2" />
-                    Imprimir
-                  </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            {searchQuery
+                              ? "Nenhum produto encontrado"
+                              : "Nenhum produto em estoque"}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-              {/* Paletizados table */}
-              <div className="overflow-x-auto">
-                <table className="data-table w-full">
-                  <thead>
-                    <tr>
-                      <th className="whitespace-nowrap">Código</th>
-                      <th className="whitespace-nowrap">Descrição</th>
-                      <th className="whitespace-nowrap">Categoria</th>
-                      <th className="whitespace-nowrap">Quantidade</th>
-                      <th className="whitespace-nowrap">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stockLoading ? (
-                      <tr>
-                        <td colSpan={5} className="text-center py-8">
-                          Carregando...
-                        </td>
-                      </tr>
-                    ) : filteredPaletizadoStock && filteredPaletizadoStock.length > 0 ? (
-                      filteredPaletizadoStock.map((stock) => (
-                        <tr key={stock.id}>
-                          <td className="font-medium whitespace-nowrap">{stock.product.code}</td>
-                          <td className="whitespace-nowrap">{stock.product.description}</td>
-                          <td className="whitespace-nowrap">
-                            <Badge
-                              className={
-                                stock.product.category === "alta_rotacao"
-                                  ? "badge-alta-rotacao"
-                                  : "badge-baixa-rotacao"
-                              }
-                            >
-                              {stock.product.category === "alta_rotacao"
-                                ? "Alta Rotação"
-                                : "Baixa Rotação"}
-                            </Badge>
-                          </td>
-                          <td className="whitespace-nowrap">{stock.quantity}</td>
-                          <td className="whitespace-nowrap">
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingPaletizado(stock);
-                                  setIsPaletizadoModalOpen(true);
-                                }}
+          <TabsContent value="entries" className="mt-4 sm:mt-6">
+            <Card>
+              <CardHeader className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle>Entradas</CardTitle>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      placeholder="Buscar produto..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full sm:w-64"
+                    />
+                    <Select
+                      value={categoryFilter}
+                      onValueChange={setCategoryFilter}
+                    >
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Filtrar por categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as categorias</SelectItem>
+                        <SelectItem value="alta_rotacao">Alta Rotação</SelectItem>
+                        <SelectItem value="baixa_rotacao">Baixa Rotação</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0 sm:p-6">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="whitespace-nowrap">Código</TableHead>
+                        <TableHead className="whitespace-nowrap">Produto</TableHead>
+                        <TableHead className="whitespace-nowrap">Categoria</TableHead>
+                        <TableHead className="whitespace-nowrap">Quantidade</TableHead>
+                        <TableHead className="whitespace-nowrap">Data</TableHead>
+                        <TableHead className="whitespace-nowrap">Responsável</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {entriesLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8">
+                            Carregando...
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredEntries.length > 0 ? (
+                        filteredEntries.map((entry) => (
+                          <TableRow key={entry.id}>
+                            <TableCell className="whitespace-nowrap">{entry.code}</TableCell>
+                            <TableCell className="whitespace-nowrap">{entry.name}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              <Badge
+                                variant={
+                                  entry.category === "alta_rotacao" ? "default" : "secondary"
+                                }
                               >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="text-center py-8 text-muted-foreground">
-                          {searchTerm
-                            ? "Nenhum paletizado encontrado"
-                            : "Nenhum paletizado em estoque"}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                                {entry.category === "alta_rotacao" ? "Alta" : "Baixa"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">{entry.quantity}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm", {
+                                locale: ptBR,
+                              })}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">{entry.user}</TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            {searchQuery
+                              ? "Nenhuma entrada encontrada"
+                              : "Nenhuma entrada registrada"}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-      <PicoFormModal
-        isOpen={isPicoModalOpen}
-        onClose={() => {
-          setIsPicoModalOpen(false);
-          setEditingPico(null);
-        }}
-        pico={editingPico}
-      />
-
-      <PaletizadoFormModal
-        isOpen={isPaletizadoModalOpen}
-        onClose={() => {
-          setIsPaletizadoModalOpen(false);
-          setEditingPaletizado(null);
-        }}
-        stock={editingPaletizado}
-      />
+          <TabsContent value="exits" className="mt-4 sm:mt-6">
+            <Card>
+              <CardHeader className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle>Saídas</CardTitle>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      placeholder="Buscar produto..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full sm:w-64"
+                    />
+                    <Select
+                      value={categoryFilter}
+                      onValueChange={setCategoryFilter}
+                    >
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Filtrar por categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as categorias</SelectItem>
+                        <SelectItem value="alta_rotacao">Alta Rotação</SelectItem>
+                        <SelectItem value="baixa_rotacao">Baixa Rotação</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0 sm:p-6">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="whitespace-nowrap">Código</TableHead>
+                        <TableHead className="whitespace-nowrap">Produto</TableHead>
+                        <TableHead className="whitespace-nowrap">Categoria</TableHead>
+                        <TableHead className="whitespace-nowrap">Quantidade</TableHead>
+                        <TableHead className="whitespace-nowrap">Data</TableHead>
+                        <TableHead className="whitespace-nowrap">Responsável</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {exitsLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8">
+                            Carregando...
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredExits.length > 0 ? (
+                        filteredExits.map((exit) => (
+                          <TableRow key={exit.id}>
+                            <TableCell className="whitespace-nowrap">{exit.code}</TableCell>
+                            <TableCell className="whitespace-nowrap">{exit.name}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              <Badge
+                                variant={
+                                  exit.category === "alta_rotacao" ? "default" : "secondary"
+                                }
+                              >
+                                {exit.category === "alta_rotacao" ? "Alta" : "Baixa"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">{exit.quantity}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {format(new Date(exit.createdAt), "dd/MM/yyyy HH:mm", {
+                                locale: ptBR,
+                              })}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">{exit.user}</TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            {searchQuery
+                              ? "Nenhuma saída encontrada"
+                              : "Nenhuma saída registrada"}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
