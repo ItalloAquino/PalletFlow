@@ -8,6 +8,9 @@ import {
   TrendingDown,
   ArrowUp,
   ArrowDown,
+  Users,
+  ArrowDownToLine,
+  ArrowUpFromLine,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -58,193 +61,103 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-4 sm:mb-6 lg:mb-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h2>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Visão geral operacional do armazém
-        </p>
+    <div className="p-4 lg:p-6">
+      <div className="flex justify-between items-center mb-4 lg:mb-6">
+        <h1 className="text-2xl lg:text-3xl font-bold">Dashboard</h1>
       </div>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-6 lg:mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-4 lg:mb-6">
         <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                  Total Picos
-                </p>
-                <p className="text-xl sm:text-2xl font-bold text-foreground">
-                  {stats?.totalPicos || 0}
-                </p>
-              </div>
-              <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalPicos || 0}</div>
           </CardContent>
         </Card>
-
         <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                  Total Paletizados
-                </p>
-                <p className="text-xl sm:text-2xl font-bold text-foreground">
-                  {stats?.totalPaletizados || 0}
-                </p>
-              </div>
-              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalPaletizados || 0}</div>
           </CardContent>
         </Card>
-
         <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                  Alta Rotação
-                </p>
-                <p className="text-xl sm:text-2xl font-bold text-foreground">
-                  {stats?.altaRotacao || 0}
-                </p>
-              </div>
-              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              {stats?.altaRotacao && stats?.baixaRotacao
-                ? Math.round(
-                    (stats.altaRotacao / (stats.altaRotacao + stats.baixaRotacao)) * 100
-                  )
-                : 0}
-              % do total
-            </p>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Entradas Hoje</CardTitle>
+            <ArrowDownToLine className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.recentEntries?.length || 0}</div>
           </CardContent>
         </Card>
-
         <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                  Baixa Rotação
-                </p>
-                <p className="text-xl sm:text-2xl font-bold text-foreground">
-                  {stats?.baixaRotacao || 0}
-                </p>
-              </div>
-              <TrendingDown className="h-6 w-6 sm:h-8 sm:w-8 text-red-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              {stats?.altaRotacao && stats?.baixaRotacao
-                ? Math.round(
-                    (stats.baixaRotacao / (stats.altaRotacao + stats.baixaRotacao)) * 100
-                  )
-                : 0}
-              % do total
-            </p>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Saídas Hoje</CardTitle>
+            <ArrowUpFromLine className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.recentExits?.length || 0}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         <Card>
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="flex items-center text-base sm:text-lg">
-              <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
-              Entradas Recentes
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>Entradas Recentes</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            <div className="space-y-2 sm:space-y-3">
-              {stats?.recentEntries && stats.recentEntries.length > 0 ? (
-                stats.recentEntries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-2 sm:p-3 bg-green-50 dark:bg-green-950 rounded-lg"
-                  >
-                    <div className="mb-2 sm:mb-0">
-                      <p className="font-medium text-sm sm:text-base text-foreground">
-                        {entry.productCode}
-                      </p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        {entry.quantity} unidades
-                      </p>
-                    </div>
-                    <div className="text-left sm:text-right">
-                      <Badge
-                        variant={
-                          entry.category === "alta_rotacao" ? "default" : "secondary"
-                        }
-                        className="mb-1 text-xs"
-                      >
-                        {entry.category === "alta_rotacao" ? "Alta" : "Baixa"}
-                      </Badge>
-                      <p className="text-xs text-green-600 dark:text-green-400">
-                        {format(new Date(entry.createdAt), "dd/MM HH:mm", {
-                          locale: ptBR,
-                        })}
-                      </p>
-                    </div>
+          <CardContent>
+            <div className="space-y-4">
+              {stats?.recentEntries?.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">{entry.productCode}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Quantidade: {entry.quantity}
+                    </p>
                   </div>
-                ))
-              ) : (
-                <p className="text-center text-sm text-muted-foreground py-4 sm:py-8">
-                  Nenhuma entrada recente
-                </p>
-              )}
+                  <div className="text-sm text-muted-foreground">
+                    {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm", {
+                      locale: ptBR,
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="flex items-center text-base sm:text-lg">
-              <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-500 mr-2" />
-              Saídas Recentes
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>Saídas Recentes</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            <div className="space-y-2 sm:space-y-3">
-              {stats?.recentExits && stats.recentExits.length > 0 ? (
-                stats.recentExits.map((exit) => (
-                  <div
-                    key={exit.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-2 sm:p-3 bg-red-50 dark:bg-red-950 rounded-lg"
-                  >
-                    <div className="mb-2 sm:mb-0">
-                      <p className="font-medium text-sm sm:text-base text-foreground">
-                        {exit.productCode}
-                      </p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        {exit.quantity} unidades
-                      </p>
-                    </div>
-                    <div className="text-left sm:text-right">
-                      <Badge
-                        variant={
-                          exit.category === "alta_rotacao" ? "default" : "secondary"
-                        }
-                        className="mb-1 text-xs"
-                      >
-                        {exit.category === "alta_rotacao" ? "Alta" : "Baixa"}
-                      </Badge>
-                      <p className="text-xs text-red-600 dark:text-red-400">
-                        {format(new Date(exit.createdAt), "dd/MM HH:mm", {
-                          locale: ptBR,
-                        })}
-                      </p>
-                    </div>
+          <CardContent>
+            <div className="space-y-4">
+              {stats?.recentExits?.map((exit) => (
+                <div
+                  key={exit.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">{exit.productCode}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Quantidade: {exit.quantity}
+                    </p>
                   </div>
-                ))
-              ) : (
-                <p className="text-center text-sm text-muted-foreground py-4 sm:py-8">
-                  Nenhuma saída recente
-                </p>
-              )}
+                  <div className="text-sm text-muted-foreground">
+                    {format(new Date(exit.createdAt), "dd/MM/yyyy HH:mm", {
+                      locale: ptBR,
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

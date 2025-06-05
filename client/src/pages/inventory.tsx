@@ -1,404 +1,359 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Printer, Edit, Trash2, ArrowUpDown } from "lucide-react";
+import { Plus, Search, Printer, Edit, Trash2, ArrowUpDown, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { apiRequest } from "@/lib/queryClient";
 
 interface StockItem {
-  id: string;
+  id: number;
   code: string;
   name: string;
   category: "alta_rotacao" | "baixa_rotacao";
   quantity: number;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface EntryItem {
-  id: string;
-  code: string;
-  name: string;
-  category: "alta_rotacao" | "baixa_rotacao";
+  id: number;
+  product: {
+    id: number;
+    name: string;
+  };
   quantity: number;
-  createdAt: string;
-  user: string;
+  createdAt: Date;
+  user: {
+    id: number;
+    name: string;
+  };
 }
 
 interface ExitItem {
-  id: string;
-  code: string;
-  name: string;
-  category: "alta_rotacao" | "baixa_rotacao";
+  id: number;
+  product: {
+    id: number;
+    name: string;
+  };
   quantity: number;
-  createdAt: string;
-  user: string;
+  createdAt: Date;
+  user: {
+    id: number;
+    name: string;
+  };
 }
 
 export default function InventoryPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<StockItem | null>(null);
+  const [actionType, setActionType] = useState<"entry" | "exit">("entry");
+  const queryClient = useQueryClient();
 
-  const { data: stock, isLoading: stockLoading } = useQuery<StockItem[]>({
+  const { data: stock = [], isLoading: stockLoading } = useQuery<StockItem[]>({
     queryKey: ["stock"],
     queryFn: async () => {
-      const response = await fetch("/api/stock");
-      if (!response.ok) throw new Error("Failed to fetch stock");
+      const response = await apiRequest("GET", "/api/stock");
       return response.json();
     },
   });
 
-  const { data: entries, isLoading: entriesLoading } = useQuery<EntryItem[]>({
+  const { data: entries = [], isLoading: entriesLoading } = useQuery<EntryItem[]>({
     queryKey: ["entries"],
     queryFn: async () => {
-      const response = await fetch("/api/entries");
-      if (!response.ok) throw new Error("Failed to fetch entries");
+      const response = await apiRequest("GET", "/api/entries");
       return response.json();
     },
   });
 
-  const { data: exits, isLoading: exitsLoading } = useQuery<ExitItem[]>({
+  const { data: exits = [], isLoading: exitsLoading } = useQuery<ExitItem[]>({
     queryKey: ["exits"],
     queryFn: async () => {
-      const response = await fetch("/api/exits");
-      if (!response.ok) throw new Error("Failed to fetch exits");
+      const response = await apiRequest("GET", "/api/exits");
       return response.json();
     },
   });
 
-  const filteredStock = useMemo(() => {
-    if (!stock) return [];
-    return stock.filter((item) => {
-      const matchesSearch = item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
-      return matchesSearch && matchesCategory;
-    });
-  }, [stock, searchQuery, categoryFilter]);
+  const filteredStock = stock.filter((item) => {
+    const matchesSearch =
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.code.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter ? item.category === categoryFilter : true;
+    return matchesSearch && matchesCategory;
+  });
 
-  const filteredEntries = useMemo(() => {
-    if (!entries) return [];
-    return entries.filter((entry) => {
-      const matchesSearch = entry.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        entry.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = categoryFilter === "all" || entry.category === categoryFilter;
-      return matchesSearch && matchesCategory;
-    });
-  }, [entries, searchQuery, categoryFilter]);
+  const filteredEntries = entries.filter((entry) => {
+    const matchesSearch = entry.product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
 
-  const filteredExits = useMemo(() => {
-    if (!exits) return [];
-    return exits.filter((exit) => {
-      const matchesSearch = exit.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        exit.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = categoryFilter === "all" || exit.category === categoryFilter;
-      return matchesSearch && matchesCategory;
-    });
-  }, [exits, searchQuery, categoryFilter]);
+  const filteredExits = exits.filter((exit) => {
+    const matchesSearch = exit.product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
 
-  const handleStockAction = (item: StockItem) => {
-    // Implementar lógica de ação no estoque
-    console.log("Stock action:", item);
+  const handleStockAction = (id: number, type: "entry" | "exit") => {
+    const item = stock.find((i) => i.id === id);
+    if (item) {
+      setSelectedItem(item);
+      setActionType(type);
+      setIsStockModalOpen(true);
+    }
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-4 sm:mb-6 lg:mb-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Inventário</h2>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Gerenciamento de estoque e movimentações
-        </p>
+    <div className="p-4 lg:p-6">
+      <div className="flex justify-between items-center mb-4 lg:mb-6">
+        <h1 className="text-2xl lg:text-3xl font-bold">Estoque</h1>
       </div>
 
-      <div className="space-y-4 sm:space-y-6">
-        <Tabs defaultValue="stock" className="w-full">
-          <TabsList className="w-full sm:w-auto">
-            <TabsTrigger value="stock" className="flex-1 sm:flex-none">
-              Estoque
-            </TabsTrigger>
-            <TabsTrigger value="entries" className="flex-1 sm:flex-none">
-              Entradas
-            </TabsTrigger>
-            <TabsTrigger value="exits" className="flex-1 sm:flex-none">
-              Saídas
-            </TabsTrigger>
-          </TabsList>
+      <Card>
+        <CardHeader>
+          <CardTitle>Gerenciamento de Estoque</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="stock" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="stock">Estoque</TabsTrigger>
+              <TabsTrigger value="entries">Entradas</TabsTrigger>
+              <TabsTrigger value="exits">Saídas</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="stock" className="mt-4 sm:mt-6">
-            <Card>
-              <CardHeader className="p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <CardTitle>Estoque Atual</CardTitle>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Input
-                      placeholder="Buscar produto..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full sm:w-64"
-                    />
-                    <Select
-                      value={categoryFilter}
-                      onValueChange={setCategoryFilter}
-                    >
-                      <SelectTrigger className="w-full sm:w-48">
-                        <SelectValue placeholder="Filtrar por categoria" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as categorias</SelectItem>
-                        <SelectItem value="alta_rotacao">Alta Rotação</SelectItem>
-                        <SelectItem value="baixa_rotacao">Baixa Rotação</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+            <TabsContent value="stock">
+              <div className="flex flex-col lg:flex-row gap-4 mb-6">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar produtos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
                 </div>
-              </CardHeader>
-              <CardContent className="p-0 sm:p-6">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="flex h-10 w-full lg:w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Todas as categorias</option>
+                  <option value="alta_rotacao">Alta Rotação</option>
+                  <option value="baixa_rotacao">Baixa Rotação</option>
+                </select>
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Código</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Nome</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Categoria</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Quantidade</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Última Atualização</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Ações</th>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stockLoading ? (
                       <TableRow>
-                        <TableHead className="whitespace-nowrap">Código</TableHead>
-                        <TableHead className="whitespace-nowrap">Produto</TableHead>
-                        <TableHead className="whitespace-nowrap">Categoria</TableHead>
-                        <TableHead className="whitespace-nowrap">Quantidade</TableHead>
-                        <TableHead className="whitespace-nowrap">Última Atualização</TableHead>
-                        <TableHead className="whitespace-nowrap">Ações</TableHead>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          Carregando...
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {stockLoading ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8">
-                            Carregando...
+                    ) : filteredStock.length > 0 ? (
+                      filteredStock.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="whitespace-nowrap">{item.code}</TableCell>
+                          <TableCell className="whitespace-nowrap">{item.name}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge
+                              variant={item.category === "alta_rotacao" ? "default" : "secondary"}
+                            >
+                              {item.category === "alta_rotacao" ? "Alta Rotação" : "Baixa Rotação"}
+                            </Badge>
                           </TableCell>
-                        </TableRow>
-                      ) : filteredStock.length > 0 ? (
-                        filteredStock.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell className="whitespace-nowrap">{item.code}</TableCell>
-                            <TableCell className="whitespace-nowrap">{item.name}</TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              <Badge
-                                variant={
-                                  item.category === "alta_rotacao" ? "default" : "secondary"
-                                }
-                              >
-                                {item.category === "alta_rotacao" ? "Alta" : "Baixa"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">{item.quantity}</TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              {format(new Date(item.updatedAt), "dd/MM/yyyy HH:mm", {
-                                locale: ptBR,
-                              })}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
+                          <TableCell className="whitespace-nowrap">{item.quantity}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(item.updatedAt), "dd/MM/yyyy HH:mm", {
+                              locale: ptBR,
+                            })}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="flex gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleStockAction(item)}
+                                onClick={() => handleStockAction(item.id, "entry")}
                               >
-                                <ArrowUpDown className="h-4 w-4" />
+                                <ArrowDownToLine className="h-4 w-4" />
                               </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                            {searchQuery
-                              ? "Nenhum produto encontrado"
-                              : "Nenhum produto em estoque"}
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="entries" className="mt-4 sm:mt-6">
-            <Card>
-              <CardHeader className="p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <CardTitle>Entradas</CardTitle>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Input
-                      placeholder="Buscar produto..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full sm:w-64"
-                    />
-                    <Select
-                      value={categoryFilter}
-                      onValueChange={setCategoryFilter}
-                    >
-                      <SelectTrigger className="w-full sm:w-48">
-                        <SelectValue placeholder="Filtrar por categoria" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as categorias</SelectItem>
-                        <SelectItem value="alta_rotacao">Alta Rotação</SelectItem>
-                        <SelectItem value="baixa_rotacao">Baixa Rotação</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0 sm:p-6">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="whitespace-nowrap">Código</TableHead>
-                        <TableHead className="whitespace-nowrap">Produto</TableHead>
-                        <TableHead className="whitespace-nowrap">Categoria</TableHead>
-                        <TableHead className="whitespace-nowrap">Quantidade</TableHead>
-                        <TableHead className="whitespace-nowrap">Data</TableHead>
-                        <TableHead className="whitespace-nowrap">Responsável</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {entriesLoading ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8">
-                            Carregando...
-                          </TableCell>
-                        </TableRow>
-                      ) : filteredEntries.length > 0 ? (
-                        filteredEntries.map((entry) => (
-                          <TableRow key={entry.id}>
-                            <TableCell className="whitespace-nowrap">{entry.code}</TableCell>
-                            <TableCell className="whitespace-nowrap">{entry.name}</TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              <Badge
-                                variant={
-                                  entry.category === "alta_rotacao" ? "default" : "secondary"
-                                }
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleStockAction(item.id, "exit")}
                               >
-                                {entry.category === "alta_rotacao" ? "Alta" : "Baixa"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">{entry.quantity}</TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm", {
-                                locale: ptBR,
-                              })}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">{entry.user}</TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                            {searchQuery
-                              ? "Nenhuma entrada encontrada"
-                              : "Nenhuma entrada registrada"}
+                                <ArrowUpFromLine className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="exits" className="mt-4 sm:mt-6">
-            <Card>
-              <CardHeader className="p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <CardTitle>Saídas</CardTitle>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Input
-                      placeholder="Buscar produto..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full sm:w-64"
-                    />
-                    <Select
-                      value={categoryFilter}
-                      onValueChange={setCategoryFilter}
-                    >
-                      <SelectTrigger className="w-full sm:w-48">
-                        <SelectValue placeholder="Filtrar por categoria" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as categorias</SelectItem>
-                        <SelectItem value="alta_rotacao">Alta Rotação</SelectItem>
-                        <SelectItem value="baixa_rotacao">Baixa Rotação</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0 sm:p-6">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
+                      ))
+                    ) : (
                       <TableRow>
-                        <TableHead className="whitespace-nowrap">Código</TableHead>
-                        <TableHead className="whitespace-nowrap">Produto</TableHead>
-                        <TableHead className="whitespace-nowrap">Categoria</TableHead>
-                        <TableHead className="whitespace-nowrap">Quantidade</TableHead>
-                        <TableHead className="whitespace-nowrap">Data</TableHead>
-                        <TableHead className="whitespace-nowrap">Responsável</TableHead>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                          {searchQuery
+                            ? "Nenhum produto encontrado"
+                            : "Nenhum produto cadastrado"}
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {exitsLoading ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8">
-                            Carregando...
-                          </TableCell>
-                        </TableRow>
-                      ) : filteredExits.length > 0 ? (
-                        filteredExits.map((exit) => (
-                          <TableRow key={exit.id}>
-                            <TableCell className="whitespace-nowrap">{exit.code}</TableCell>
-                            <TableCell className="whitespace-nowrap">{exit.name}</TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              <Badge
-                                variant={
-                                  exit.category === "alta_rotacao" ? "default" : "secondary"
-                                }
-                              >
-                                {exit.category === "alta_rotacao" ? "Alta" : "Baixa"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">{exit.quantity}</TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              {format(new Date(exit.createdAt), "dd/MM/yyyy HH:mm", {
-                                locale: ptBR,
-                              })}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">{exit.user}</TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                            {searchQuery
-                              ? "Nenhuma saída encontrada"
-                              : "Nenhuma saída registrada"}
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="entries">
+              <div className="flex flex-col lg:flex-row gap-4 mb-6">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar entradas..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="flex h-10 w-full lg:w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Todas as categorias</option>
+                  <option value="alta_rotacao">Alta Rotação</option>
+                  <option value="baixa_rotacao">Baixa Rotação</option>
+                </select>
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Produto</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Quantidade</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Data</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Usuário</th>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {entriesLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8">
+                          Carregando...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredEntries.length > 0 ? (
+                      filteredEntries.map((entry) => (
+                        <TableRow key={entry.id}>
+                          <TableCell className="whitespace-nowrap">{entry.product.name}</TableCell>
+                          <TableCell className="whitespace-nowrap">{entry.quantity}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(entry.createdAt), "dd/MM/yyyy HH:mm", {
+                              locale: ptBR,
+                            })}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{entry.user.name}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                          {searchQuery
+                            ? "Nenhuma entrada encontrada"
+                            : "Nenhuma entrada registrada"}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="exits">
+              <div className="flex flex-col lg:flex-row gap-4 mb-6">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar saídas..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="flex h-10 w-full lg:w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Todas as categorias</option>
+                  <option value="alta_rotacao">Alta Rotação</option>
+                  <option value="baixa_rotacao">Baixa Rotação</option>
+                </select>
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Produto</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Quantidade</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Data</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap">Usuário</th>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {exitsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8">
+                          Carregando...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredExits.length > 0 ? (
+                      filteredExits.map((exit) => (
+                        <TableRow key={exit.id}>
+                          <TableCell className="whitespace-nowrap">{exit.product.name}</TableCell>
+                          <TableCell className="whitespace-nowrap">{exit.quantity}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(exit.createdAt), "dd/MM/yyyy HH:mm", {
+                              locale: ptBR,
+                            })}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{exit.user.name}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                          {searchQuery
+                            ? "Nenhuma saída encontrada"
+                            : "Nenhuma saída registrada"}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
