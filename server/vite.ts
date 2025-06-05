@@ -1,3 +1,4 @@
+// TESTE DE ALTERAÇÃO LOCAL - Se você ver este comentário, as alterações estão funcionando!
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
